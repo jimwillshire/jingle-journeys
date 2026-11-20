@@ -71,7 +71,9 @@
     display: flex; align-items: center; justify-content: center; gap: 18px; color: #fff; overflow: hidden;
     box-shadow: 0 10px 0 rgba(0,0,0,.28), inset 0 2px 0 rgba(255,255,255,.25); transition: transform .06s; }
   .big:active, .big.pressed { transform: translateY(6px) scale(.99); box-shadow: 0 4px 0 rgba(0,0,0,.28); }
-  .big svg { height: 72%; max-height: 220px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+  .big svg { flex: none; height: min(220px, 22dvh); width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+  #btnTree svg { aspect-ratio: 100 / 120; }
+  #btnWreath svg { aspect-ratio: 100 / 110; }
   .big .count { font-size: 64px; font-weight: 800; min-width: 1.4em; text-align: center; font-variant-numeric: tabular-nums; }
   .big .label { position: absolute; top: 12px; left: 18px; font-size: 15px; font-weight: 700; opacity: .85; text-transform: uppercase; letter-spacing: 1.5px; }
   #btnTree { background: linear-gradient(160deg, #2d9d5c, #146b3a); }
@@ -172,7 +174,7 @@
   <div class="bar">
     <button id="undo">↩︎ Undo</button>
     <button class="primary" data-go="scores">🏆 Scores</button>
-    <button data-go="route">Finish</button>
+    <button id="finish">Finish</button>
   </div>
 </section>
 
@@ -214,7 +216,10 @@
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
     "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c === "x" ? r : (r&3|8)).toString(16); }));
 
-  const state = { player: store.get("player", null), route: store.get("route", null), tab: "trip", scoreRoute: null, back: "who" };
+  const state = { player: store.get("player", null), route: store.get("route", null), tab: "trip", scoreRoute: null, back: "who",
+    session: store.get("session", null) }; // {start, player, route}: the big counters only count taps since this journey began
+  const inSession = t => !!state.session && t.player === state.session.player && t.route === state.session.route &&
+    t.trip_date === today() && t.created_at >= state.session.start;
 
   // ---------- Local data ----------
   // taps: every tap made on this phone. synced=false until the database has it.
@@ -326,7 +331,9 @@
   }
   $("routeList").addEventListener("click", e => {
     const b = e.target.closest("[data-route]"); if (!b) return;
-    state.route = b.dataset.route; state.scoreRoute = state.route; store.set("route", state.route); go("tap");
+    state.route = b.dataset.route; state.scoreRoute = state.route; store.set("route", state.route);
+    state.session = { start: new Date().toISOString(), player: state.player, route: state.route }; store.set("session", state.session);
+    go("tap");
   });
 
   function renderTap() {
@@ -336,8 +343,9 @@
     $("tapWho").innerHTML = `<span class="e">${p.emoji}</span>${p.name} ▾`;
     $("tapRoute").textContent = routeName(r) + " · today";
     const t = tally(r.id, "trip");
-    $("cTree").textContent = t[p.id].tree;
-    $("cWreath").textContent = t[p.id].wreath;
+    const mine = taps.filter(inSession);
+    $("cTree").textContent = mine.filter(x => x.kind === "tree").length;
+    $("cWreath").textContent = mine.filter(x => x.kind === "wreath").length;
     const ranked = C.PLAYERS.map(x => ({ x, s: points(t[x.id]) })).filter(o => o.s > 0 || o.x.id === p.id).sort((a, b) => b.s - a.s);
     $("strip").innerHTML = ranked.map(o => `<span class="chip">${o.x.emoji} ${o.x.name}<b>${o.s}</b></span>`).join("");
   }
@@ -393,12 +401,18 @@
   $("undo").onclick = () => {
     for (let i = taps.length - 1; i >= 0; i--) {
       const t = taps[i];
-      if (t.player === state.player && t.route === state.route && t.trip_date === today()) {
+      if (inSession(t)) {
         taps.splice(i, 1);
         if (t.synced) deletes.push(t);
         save(); renderTap(); sync(); return;
       }
     }
+  };
+
+  // Finish: show today's leaderboard for this journey; Back from there returns to the start.
+  $("finish").onclick = () => {
+    state.tab = "trip"; state.scoreRoute = state.route;
+    go("scores"); state.back = "who";
   };
 
   // ---------- Sound ----------
