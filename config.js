@@ -17,7 +17,7 @@ window.TREESPOTTER_CONFIG = {
   PLAYERS: [
     { id: "belle",    name: "Belle", colour: "#e63946", emoji: "⭐" },
     { id: "emily",    name: "Emily",    colour: "#f4a261", emoji: "❄️" },
-    { id: "jessie",   name: "Jessie",   colour: "#9b5de5", emoji: "🦄" },
+    { id: "jessie",   name: "Jessie",   colour: "#9b5de5", emoji: "candycane" },
     { id: "mummy",    name: "Mummy",    colour: "#00bbf9", emoji: "🎁" },
     { id: "daddy",    name: "Daddy",    colour: "#2ec4b6", emoji: "🦌" }
   ],
@@ -26,13 +26,15 @@ window.TREESPOTTER_CONFIG = {
     home: "Home",
     swgs: "SWGS",
     broadchalke: "Broad Chalke Primary",
-    office: "Daddy's office"
+    office: "Daddy's office",
+    max: "Max 🐴"
   },
 
   // Each pair is one journey; the app adds the reverse automatically.
   JOURNEYS: [
     ["home", "swgs"],
     ["home", "broadchalke"],
-    ["home", "office"]
+    ["home", "office"],
+    ["home", "max"]
   ]
 };

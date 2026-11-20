@@ -212,6 +212,11 @@
   const routeName = r => `${C.PLACES[r.from]} → ${C.PLACES[r.to]}`;
   const routeById = id => ROUTES.find(r => r.id === id);
   const playerById = id => C.PLAYERS.find(p => p.id === id);
+  // There is no candy cane emoji, so emoji: "candycane" in config.js draws one.
+  const CANDY_CANE = `<svg viewBox="0 0 24 32" width="0.75em" height="1em" style="vertical-align:-0.12em" aria-hidden="true">
+    <path d="M8 30V11a5 5 0 0 1 10 0v2" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M8 30V11a5 5 0 0 1 10 0v2" fill="none" stroke="#e63946" stroke-width="5.5" stroke-dasharray="3.2 3.2"/></svg>`;
+  const icon = p => p.emoji === "candycane" ? CANDY_CANE : p.emoji;
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
     "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c === "x" ? r : (r&3|8)).toString(16); }));
@@ -311,7 +316,7 @@
   function renderPlayers() {
     $("playerList").innerHTML = C.PLAYERS.map(p =>
       `<button class="player${p.id === state.player ? " last" : ""}" style="background:${p.colour}" data-player="${p.id}">
-        <span class="e">${p.emoji}</span>${p.name}</button>`).join("");
+        <span class="e">${icon(p)}</span>${p.name}</button>`).join("");
   }
   $("playerList").addEventListener("click", e => {
     const b = e.target.closest("[data-player]"); if (!b) return;
@@ -320,7 +325,7 @@
 
   function renderRoutes() {
     const p = playerById(state.player);
-    $("routeWho").textContent = p ? `${p.emoji} ${p.name}` : "";
+    $("routeWho").innerHTML = p ? `${icon(p)} ${p.name}` : "";
     $("routeList").innerHTML = C.JOURNEYS.map(([a, b]) => {
       const there = routeById(`${a}-${b}`), back = routeById(`${b}-${a}`);
       return `<div class="group"><h2>${C.PLACES[b]}</h2><div class="routes">
@@ -340,14 +345,14 @@
     const p = playerById(state.player), r = routeById(state.route);
     if (!p || !r) return;
     $("tapWho").style.background = p.colour;
-    $("tapWho").innerHTML = `<span class="e">${p.emoji}</span>${p.name} ▾`;
+    $("tapWho").innerHTML = `<span class="e">${icon(p)}</span>${p.name} ▾`;
     $("tapRoute").textContent = routeName(r) + " · today";
     const t = tally(r.id, "trip");
     const mine = taps.filter(inSession);
     $("cTree").textContent = mine.filter(x => x.kind === "tree").length;
     $("cWreath").textContent = mine.filter(x => x.kind === "wreath").length;
     const ranked = C.PLAYERS.map(x => ({ x, s: points(t[x.id]) })).filter(o => o.s > 0 || o.x.id === p.id).sort((a, b) => b.s - a.s);
-    $("strip").innerHTML = ranked.map(o => `<span class="chip">${o.x.emoji} ${o.x.name}<b>${o.s}</b></span>`).join("");
+    $("strip").innerHTML = ranked.map(o => `<span class="chip">${icon(o.x)} ${o.x.name}<b>${o.s}</b></span>`).join("");
   }
 
   function renderScores() {
@@ -366,7 +371,7 @@
         if (r.pts !== prev) { rank = i; prev = r.pts; }
         return `<div class="row${rank === 0 && r.pts ? " first" : ""}">
           <div class="rank">${r.pts ? (medals[rank] || rank + 1) : "·"}</div>
-          <div><div class="pname">${r.p.emoji} ${r.p.name}</div>
+          <div><div class="pname">${icon(r.p)} ${r.p.name}</div>
             <div class="pdetail">🎄 ${r.s.tree} tree${r.s.tree===1?"":"s"} · 💚 ${r.s.wreath} wreath${r.s.wreath===1?"":"s"}</div></div>
           <div class="pts">${r.pts}<small>pts</small></div></div>`;
       }).join("");

@@ -1,6 +1,6 @@
 // Caches the app so it opens instantly and works with no signal.
 // Bump VERSION whenever you change any file.
-const VERSION = "treespotter-v10";
+const VERSION = "treespotter-v11";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 
