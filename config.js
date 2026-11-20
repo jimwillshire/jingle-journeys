@@ -23,10 +23,10 @@ window.TREESPOTTER_CONFIG = {
   ],
 
   PLACES: {
-    home: "Home",
-    swgs: "SWGS",
-    broadchalke: "Broad Chalke Primary",
-    office: "Daddy's office",
+    home: "Home 🏠",
+    swgs: "SWGS 🎓",
+    broadchalke: "Broad Chalke Primary 🎒",
+    office: "Daddy's office 🏢",
     max: "Max 🐴"
   },
 
