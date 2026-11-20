@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Jingle Journeys</title>
+<meta name="theme-color" content="#0b3d2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jingle">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #0b3d2e; --bg2: #072a20; --card: rgba(255,255,255,.08);
+    --line: rgba(255,255,255,.14); --text: #fdfaf2; --muted: #b9d3c6;
+    --gold: #ffd166; --red: #e63946; --accent: #2ec4b6;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--text); background: radial-gradient(120% 80% at 50% 0%, #135c45 0%, var(--bg) 45%, var(--bg2) 100%);
+    background-attachment: fixed; overscroll-behavior: none; user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  #snow { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .screen { display: none; position: relative; z-index: 1; min-height: 100dvh; flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 18px); }
+  .screen.active { display: flex; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; min-height: 44px; }
+  header h1 { font-size: 26px; margin: 0; flex: 1; letter-spacing: .2px; }
+  header .sub { color: var(--muted); font-size: 15px; font-weight: 500; display: block; margin-top: 2px; }
+  .back { width: 44px; height: 44px; border-radius: 22px; border: 1px solid var(--line); background: var(--card);
+    color: var(--text); font-size: 22px; display: grid; place-items: center; cursor: pointer; flex: none; }
+  .title-big { text-align: center; margin: 8px 0 22px; }
+  .title-big h1 { font-size: 34px; margin: 6px 0 4px; }
+  .title-big p { margin: 0; color: var(--muted); font-size: 17px; }
+
+  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .player { border: 0; border-radius: 22px; padding: 22px 10px; font-size: 24px; font-weight: 700; color: #fff;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,.25); transition: transform .08s; }
+  .player .e { font-size: 40px; line-height: 1; }
+  .player:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .player.last { outline: 4px solid var(--gold); outline-offset: 2px; }
+  .players .player:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+  .group { margin-bottom: 18px; }
+  .group h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 0 0 8px 4px; }
+  .routes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .route { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 18px;
+    padding: 16px 12px; font-size: 18px; font-weight: 650; text-align: left; cursor: pointer; line-height: 1.25; }
+  .route small { display: block; color: var(--muted); font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+  .route:active { background: rgba(255,255,255,.18); }
+  .linkbtn { margin-top: auto; padding-top: 10px; text-align: center; }
+  .ghost { background: none; border: 1px solid var(--line); color: var(--text); border-radius: 999px;
+    padding: 12px 20px; font-size: 16px; font-weight: 600; cursor: pointer; }
+
+  /* Tap screen */
+  #tap header { margin-bottom: 8px; }
+  .who { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 999px;
+    font-weight: 700; font-size: 18px; color: #fff; border: 0; cursor: pointer; }
+  .who .e { font-size: 22px; }
+  .awake { font-size: 12px; color: var(--muted); text-align: right; line-height: 1.2; }
+  .awake.bad { color: var(--gold); }
+  .bigbtns { flex: 1; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+  .big { position: relative; flex: 1; max-height: 340px; min-height: 180px; border: 0; border-radius: 32px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 18px; color: #fff; overflow: hidden;
+    box-shadow: 0 10px 0 rgba(0,0,0,.28), inset 0 2px 0 rgba(255,255,255,.25); transition: transform .06s; }
+  .big:active, .big.pressed { transform: translateY(6px) scale(.99); box-shadow: 0 4px 0 rgba(0,0,0,.28); }
+  .big svg { height: 72%; max-height: 220px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+  .big .count { font-size: 64px; font-weight: 800; min-width: 1.4em; text-align: center; font-variant-numeric: tabular-nums; }
+  .big .label { position: absolute; top: 12px; left: 18px; font-size: 15px; font-weight: 700; opacity: .85; text-transform: uppercase; letter-spacing: 1.5px; }
+  #btnTree { background: linear-gradient(160deg, #2d9d5c, #146b3a); }
+  #btnWreath { background: linear-gradient(160deg, #d62839, #9a031e); }
+  .pop { position: absolute; font-size: 44px; font-weight: 800; pointer-events: none; animation: pop .8s ease-out forwards; }
+  @keyframes pop { from { opacity: 1; transform: translate(-50%, -50%) scale(.8); } to { opacity: 0; transform: translate(-50%, -160%) scale(1.3); } }
+  .strip { display: flex; gap: 6px; overflow-x: auto; margin: 12px 0 10px; padding-bottom: 2px; }
+  .chip { flex: none; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; background: var(--card); border: 1px solid var(--line); }
+  .chip b { color: var(--gold); margin-left: 4px; }
+  .bar { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 10px; }
+  .bar button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 16px;
+    padding: 14px 6px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .bar button.primary { background: var(--gold); color: #3a2a00; border: 0; }
+
+  /* Scoreboard */
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border-radius: 14px; padding: 4px; margin-bottom: 14px; }
+  .tabs button { border: 0; background: none; color: var(--muted); padding: 10px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .tabs button.on { background: rgba(255,255,255,.16); color: var(--text); }
+  .board { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; padding: 12px 14px;
+    border-radius: 18px; background: var(--card); border: 1px solid var(--line); }
+  .row.first { background: linear-gradient(90deg, rgba(255,209,102,.28), rgba(255,209,102,.06)); border-color: rgba(255,209,102,.6); }
+  .rank { font-size: 28px; text-align: center; }
+  .pname { font-size: 20px; font-weight: 750; display: flex; align-items: center; gap: 8px; }
+  .pdetail { color: var(--muted); font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .pts { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .pts small { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 2px; }
+  .note { color: var(--muted); font-size: 13px; text-align: center; margin-top: 14px; line-height: 1.4; }
+  .routepick { width: 100%; margin-bottom: 12px; padding: 12px; border-radius: 14px; background: var(--card); color: var(--text);
+    border: 1px solid var(--line); font-size: 16px; font-weight: 600; font-family: inherit; }
+  .routepick option { color: #000; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 17px; }
+  .sync { position: fixed; z-index: 5; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 6px); font-size: 11px; color: var(--muted); opacity: .8; }
+</style>
+</head>
+<body>
+<canvas id="snow"></canvas>
+
+<!-- 1. Who are you -->
+<section class="screen active" id="who">
+  <div class="title-big">
+    <div style="font-size:54px">🔔🎄</div>
+    <h1>Jingle Journeys</h1>
+    <p>Spot the trees and wreaths. Who's playing?</p>
+  </div>
+  <div class="players" id="playerList"></div>
+  <div class="linkbtn"><button class="ghost" data-go="scores">🏆 Scoreboard</button></div>
+</section>
+
+<!-- 2. Which journey -->
+<section class="screen" id="route">
+  <header>
+    <button class="back" data-go="who" aria-label="Back">‹</button>
+    <h1>Which journey?<span class="sub" id="routeWho"></span></h1>
+  </header>
+  <div id="routeList"></div>
+</section>
+
+<!-- 3. Spot! -->
+<section class="screen" id="tap">
+  <header>
+    <button class="who" id="tapWho" data-go="who"></button>
+    <div style="flex:1"></div>
+    <div class="awake" id="awake"></div>
+  </header>
+  <div style="color:var(--muted);font-weight:600;font-size:15px" id="tapRoute"></div>
+  <div class="strip" id="strip"></div>
+  <div class="bigbtns">
+    <button class="big" id="btnTree" aria-label="I spotted a Christmas tree">
+      <span class="label">Tree</span>
+      <svg viewBox="0 0 100 120" aria-hidden="true">
+        <polygon points="50,18 18,62 34,62 12,92 88,92 66,62 82,62" fill="#0f5132" stroke="#06341f" stroke-width="2"/>
+        <polygon points="50,18 22,58 78,58" fill="#198754"/>
+        <rect x="43" y="92" width="14" height="16" rx="2" fill="#7a4a1f"/>
+        <polygon points="50,4 54,14 65,14 56,20 59,31 50,24 41,31 44,20 35,14 46,14" fill="#ffd166"/>
+        <circle cx="38" cy="50" r="4" fill="#ff4d6d"/><circle cx="60" cy="44" r="4" fill="#4cc9f0"/>
+        <circle cx="30" cy="80" r="4.5" fill="#ffd166"/><circle cx="52" cy="72" r="4.5" fill="#ff4d6d"/>
+        <circle cx="72" cy="82" r="4.5" fill="#4cc9f0"/><circle cx="46" cy="58" r="3.5" fill="#ffd166"/>
+      </svg>
+      <span class="count" id="cTree">0</span>
+    </button>
+    <button class="big" id="btnWreath" aria-label="I spotted a wreath">
+      <span class="label">Wreath</span>
+      <svg viewBox="0 0 100 110" aria-hidden="true">
+        <circle cx="50" cy="52" r="34" fill="none" stroke="#146b3a" stroke-width="20"/>
+        <circle cx="50" cy="52" r="34" fill="none" stroke="#2d9d5c" stroke-width="10" stroke-dasharray="6 7"/>
+        <circle cx="26" cy="34" r="4" fill="#ff4d6d"/><circle cx="76" cy="40" r="4" fill="#ff4d6d"/>
+        <circle cx="72" cy="72" r="4" fill="#ff4d6d"/><circle cx="30" cy="74" r="4" fill="#ff4d6d"/>
+        <circle cx="50" cy="86" r="4" fill="#ff4d6d"/>
+        <path d="M50 16 L34 6 L34 26 Z M50 16 L66 6 L66 26 Z" fill="#ffd166" stroke="#b08900" stroke-width="1.5"/>
+        <circle cx="50" cy="16" r="5" fill="#ffd166" stroke="#b08900" stroke-width="1.5"/>
+        <path d="M47 20 L40 38 M53 20 L60 38" stroke="#ffd166" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <span class="count" id="cWreath">0</span>
+    </button>
+  </div>
+  <div style="height:14px"></div>
+  <div class="bar">
+    <button id="undo">↩︎ Undo</button>
+    <button class="primary" data-go="scores">🏆 Scores</button>
+    <button data-go="route">Finish</button>
+  </div>
+</section>
+
+<!-- 4. Scoreboard -->
+<section class="screen" id="scores">
+  <header>
+    <button class="back" id="scoresBack" aria-label="Back">‹</button>
+    <h1>Scoreboard</h1>
+  </header>
+  <select class="routepick" id="scoreRoute" aria-label="Journey"></select>
+  <div class="tabs">
+    <button id="tabTrip" class="on">Today</button>
+    <button id="tabSeason">All season</button>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="note" id="scoreNote"></div>
+</section>
+
+<div class="sync" id="sync"></div>
+
+<script src="config.js"></script>
+<script>
+(() => {
+  const C = window.TREESPOTTER_CONFIG;
+  const REMOTE = !!(C.API_URL && C.API_KEY);
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("ts_" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("ts_" + k, JSON.stringify(v)); } catch {} }
+  };
+
+  // ---------- Routes ----------
+  const ROUTES = [];
+  C.JOURNEYS.forEach(([a, b]) => { ROUTES.push({ id: `${a}-${b}`, from: a, to: b }); ROUTES.push({ id: `${b}-${a}`, from: b, to: a }); });
+  const routeName = r => `${C.PLACES[r.from]} → ${C.PLACES[r.to]}`;
+  const routeById = id => ROUTES.find(r => r.id === id);
+  const playerById = id => C.PLAYERS.find(p => p.id === id);
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c === "x" ? r : (r&3|8)).toString(16); }));
+
+  const state = { player: store.get("player", null), route: store.get("route", null), tab: "trip", scoreRoute: null, back: "who" };
+
+  // ---------- Local data ----------
+  // taps: every tap made on this phone. synced=false until the database has it.
+  let taps = store.get("taps", []);
+  let deletes = store.get("deletes", []); // synced taps undone while offline
+  const save = () => { store.set("taps", taps); store.set("deletes", deletes); };
+
+  // ---------- Remote ----------
+  let remoteRows = {};   // route -> [{trip_date, player, kind, n}]
+  const api = (path, opts = {}) => fetch(`${C.API_URL.replace(/\/$/, "")}/rest/v1/${path}`, {
+    ...opts, headers: { apikey: C.API_KEY, ...(C.API_KEY.startsWith("eyJ") ? { Authorization: `Bearer ${C.API_KEY}` } : {}), "Content-Type": "application/json", ...(opts.headers || {}) }
+  }).then(r => { if (!r.ok) throw new Error(r.status); return r; });
+
+  let syncing = false;
+  async function sync() {
+    if (!REMOTE || syncing || !navigator.onLine) return renderSync();
+    syncing = true;
+    try {
+      const pending = taps.filter(t => !t.synced);
+      if (pending.length) {
+        await api("taps", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+          body: JSON.stringify(pending.map(({ id, player, route, kind, trip_date, created_at }) => ({ id, player, route, kind, trip_date, created_at }))) });
+        const ids = new Set(pending.map(t => t.id));
+        taps.forEach(t => { if (ids.has(t.id)) t.synced = true; });
+        save();
+      }
+      if (deletes.length) {
+        const ids = deletes.map(d => d.id);
+        await api(`taps?id=in.(${ids.join(",")})`, { method: "DELETE" });
+        deletes = deletes.filter(d => !ids.includes(d.id)); save();
+      }
+      await pull();
+      syncError = null;
+    } catch (e) { syncError = e.message || "offline"; }
+    syncing = false; renderSync(); refresh();
+  }
+  async function pull(routeIds) {
+    const want = routeIds || [...new Set([state.route, state.scoreRoute].filter(Boolean))];
+    for (const id of want) {
+      const r = await api(`scores?route=eq.${encodeURIComponent(id)}&select=trip_date,player,kind,n`);
+      remoteRows[id] = await r.json();
+    }
+  }
+  let syncError = null;
+  function renderSync() {
+    if (!REMOTE) { $("sync").textContent = "This phone only"; return; }
+    const n = taps.filter(t => !t.synced).length + deletes.length;
+    $("sync").textContent = n ? `${n} waiting to send${navigator.onLine ? "" : " (offline)"}` : (syncError ? "Can't reach scoreboard" : "✓ Synced");
+  }
+  window.addEventListener("online", sync);
+
+  // ---------- Scores ----------
+  // Returns {player: {tree, wreath}} for a route, either today or the season.
+  function tally(routeId, scope) {
+    const out = {}; C.PLAYERS.forEach(p => out[p.id] = { tree: 0, wreath: 0 });
+    const inScope = d => scope === "trip" ? d === today() : d >= C.SEASON_START;
+    if (REMOTE) {
+      (remoteRows[routeId] || []).forEach(r => { if (inScope(r.trip_date) && out[r.player]) out[r.player][r.kind] += Number(r.n); });
+      taps.forEach(t => { if (!t.synced && t.route === routeId && inScope(t.trip_date) && out[t.player]) out[t.player][t.kind]++; });
+      deletes.forEach(t => { if (t.route === routeId && inScope(t.trip_date) && out[t.player]) out[t.player][t.kind] = Math.max(0, out[t.player][t.kind] - 1); });
+    } else {
+      taps.forEach(t => { if (t.route === routeId && inScope(t.trip_date) && out[t.player]) out[t.player][t.kind]++; });
+    }
+    return out;
+  }
+  const points = s => s.tree * C.POINTS.tree + s.wreath * C.POINTS.wreath;
+
+  // ---------- Navigation ----------
+  let current = "who";
+  function go(screen) {
+    if (screen === "scores") { state.back = current; state.scoreRoute = state.scoreRoute || state.route || ROUTES[0].id; }
+    if (screen === "tap" && (!state.player || !state.route)) screen = state.player ? "route" : "who";
+    if (screen === "route" && !state.player) screen = "who";
+    document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === screen));
+    current = screen;
+    if (screen === "tap") keepAwake(); else letSleep();
+    render(); sync();
+    window.scrollTo(0, 0);
+  }
+  document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) go(b.dataset.go); });
+  $("scoresBack").onclick = () => go(state.back === "scores" ? "who" : state.back);
+
+  // ---------- Rendering ----------
+  function render() {
+    renderPlayers(); renderRoutes(); renderTap(); renderScores(); renderSync();
+  }
+  function refresh() { if (current === "tap") renderTap(); if (current === "scores") renderScores(); }
+
+  function renderPlayers() {
+    $("playerList").innerHTML = C.PLAYERS.map(p =>
+      `<button class="player${p.id === state.player ? " last" : ""}" style="background:${p.colour}" data-player="${p.id}">
+        <span class="e">${p.emoji}</span>${p.name}</button>`).join("");
+  }
+  $("playerList").addEventListener("click", e => {
+    const b = e.target.closest("[data-player]"); if (!b) return;
+    state.player = b.dataset.player; store.set("player", state.player); go("route");
+  });
+
+  function renderRoutes() {
+    const p = playerById(state.player);
+    $("routeWho").textContent = p ? `${p.emoji} ${p.name}` : "";
+    $("routeList").innerHTML = C.JOURNEYS.map(([a, b]) => {
+      const there = routeById(`${a}-${b}`), back = routeById(`${b}-${a}`);
+      return `<div class="group"><h2>${C.PLACES[b]}</h2><div class="routes">
+        <button class="route" data-route="${there.id}"><small>Going</small>${C.PLACES[a]} → ${C.PLACES[b]}</button>
+        <button class="route" data-route="${back.id}"><small>Coming back</small>${C.PLACES[b]} → ${C.PLACES[a]}</button>
+      </div></div>`;
+    }).join("");
+  }
+  $("routeList").addEventListener("click", e => {
+    const b = e.target.closest("[data-route]"); if (!b) return;
+    state.route = b.dataset.route; state.scoreRoute = state.route; store.set("route", state.route); go("tap");
+  });
+
+  function renderTap() {
+    const p = playerById(state.player), r = routeById(state.route);
+    if (!p || !r) return;
+    $("tapWho").style.background = p.colour;
+    $("tapWho").innerHTML = `<span class="e">${p.emoji}</span>${p.name} ▾`;
+    $("tapRoute").textContent = routeName(r) + " · today";
+    const t = tally(r.id, "trip");
+    $("cTree").textContent = t[p.id].tree;
+    $("cWreath").textContent = t[p.id].wreath;
+    const ranked = C.PLAYERS.map(x => ({ x, s: points(t[x.id]) })).filter(o => o.s > 0 || o.x.id === p.id).sort((a, b) => b.s - a.s);
+    $("strip").innerHTML = ranked.map(o => `<span class="chip">${o.x.emoji} ${o.x.name}<b>${o.s}</b></span>`).join("");
+  }
+
+  function renderScores() {
+    const sel = $("scoreRoute");
+    if (!sel.options.length) sel.innerHTML = ROUTES.map(r => `<option value="${r.id}">${routeName(r)}</option>`).join("");
+    if (state.scoreRoute) sel.value = state.scoreRoute;
+    $("tabTrip").classList.toggle("on", state.tab === "trip");
+    $("tabSeason").classList.toggle("on", state.tab === "season");
+    const t = tally(state.scoreRoute, state.tab);
+    const rows = C.PLAYERS.map(p => ({ p, s: t[p.id], pts: points(t[p.id]) })).sort((a, b) => b.pts - a.pts);
+    if (!rows.some(r => r.pts)) {
+      $("board").innerHTML = `<div class="empty">No spots yet ${state.tab === "trip" ? "today" : "this season"}.<br>Eyes peeled! 👀</div>`;
+    } else {
+      const medals = ["🥇", "🥈", "🥉"]; let rank = 0, prev = null;
+      $("board").innerHTML = rows.map((r, i) => {
+        if (r.pts !== prev) { rank = i; prev = r.pts; }
+        return `<div class="row${rank === 0 && r.pts ? " first" : ""}">
+          <div class="rank">${r.pts ? (medals[rank] || rank + 1) : "·"}</div>
+          <div><div class="pname">${r.p.emoji} ${r.p.name}</div>
+            <div class="pdetail">🎄 ${r.s.tree} tree${r.s.tree===1?"":"s"} · 💚 ${r.s.wreath} wreath${r.s.wreath===1?"":"s"}</div></div>
+          <div class="pts">${r.pts}<small>pts</small></div></div>`;
+      }).join("");
+    }
+    const season = new Date(C.SEASON_START + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+    const pt = n => `${n} pt${n === 1 ? "" : "s"}`;
+    $("scoreNote").textContent = (C.POINTS.tree === C.POINTS.wreath ? `Every tree and wreath: ${pt(C.POINTS.tree)}. ` : `Tree ${pt(C.POINTS.tree)} · Wreath ${pt(C.POINTS.wreath)}. `) +
+      (state.tab === "season" ? `Season counts from ${season}.` : "") + (REMOTE ? "" : " Showing this phone only.");
+  }
+  $("scoreRoute").onchange = e => { state.scoreRoute = e.target.value; renderScores(); sync(); };
+  $("tabTrip").onclick = () => { state.tab = "trip"; renderScores(); };
+  $("tabSeason").onclick = () => { state.tab = "season"; renderScores(); };
+
+  // ---------- Tapping ----------
+  let lastTap = 0;
+  function spot(kind, btn, ev) {
+    const now = Date.now(); if (now - lastTap < 250) return; lastTap = now;
+    taps.push({ id: uuid(), player: state.player, route: state.route, kind, trip_date: today(), created_at: new Date().toISOString(), synced: false });
+    save(); renderTap(); chime(kind);
+    if (navigator.vibrate) navigator.vibrate(30);
+    const rect = btn.getBoundingClientRect(), pop = document.createElement("span");
+    pop.className = "pop"; pop.textContent = `+${C.POINTS[kind]}`;
+    const x = ev && ev.clientX ? ev.clientX - rect.left : rect.width / 2, y = ev && ev.clientY ? ev.clientY - rect.top : rect.height / 2;
+    pop.style.left = x + "px"; pop.style.top = y + "px"; btn.appendChild(pop); setTimeout(() => pop.remove(), 800);
+    btn.classList.add("pressed"); setTimeout(() => btn.classList.remove("pressed"), 90);
+    clearTimeout(spot.t); spot.t = setTimeout(sync, 1200);
+  }
+  // pointerdown so a quick tap never gets lost as a scroll
+  $("btnTree").addEventListener("pointerdown", e => { e.preventDefault(); spot("tree", e.currentTarget, e); });
+  $("btnWreath").addEventListener("pointerdown", e => { e.preventDefault(); spot("wreath", e.currentTarget, e); });
+
+  $("undo").onclick = () => {
+    for (let i = taps.length - 1; i >= 0; i--) {
+      const t = taps[i];
+      if (t.player === state.player && t.route === state.route && t.trip_date === today()) {
+        taps.splice(i, 1);
+        if (t.synced) deletes.push(t);
+        save(); renderTap(); sync(); return;
+      }
+    }
+  };
+
+  // ---------- Sound ----------
+  let ac;
+  function chime(kind) {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const notes = kind === "tree" ? [880, 1318.5] : [659.3, 987.8, 1318.5];
+      notes.forEach((f, i) => {
+        const o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime + i * 0.07;
+        o.type = "triangle"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+        o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + 0.4);
+      });
+    } catch {}
+  }
+
+  // ---------- Keep the screen on ----------
+  let lock = null;
+  async function keepAwake() {
+    if ("wakeLock" in navigator) {
+      try {
+        lock = await navigator.wakeLock.request("screen");
+        lock.addEventListener("release", () => { lock = null; showAwake(); });
+      } catch { lock = null; }
+    }
+    showAwake();
+  }
+  function letSleep() { if (lock) { lock.release().catch(() => {}); lock = null; } }
+  function showAwake() {
+    const el = $("awake");
+    if (lock) { el.textContent = "☀️ Screen stays on"; el.className = "awake"; }
+    else { el.textContent = "Screen may lock"; el.className = "awake bad"; }
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (current === "tap") keepAwake(); sync(); } });
+
+  // ---------- Snow ----------
+  (function snow() {
+    const cv = $("snow"), cx = cv.getContext("2d"); let flakes = [];
+    const size = () => { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; };
+    size(); addEventListener("resize", size);
+    for (let i = 0; i < 40; i++) flakes.push({ x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.5, s: .0006 + Math.random() * .0012, d: Math.random() * 6 });
+    (function frame(t) {
+      cx.clearRect(0, 0, cv.width, cv.height); cx.fillStyle = "rgba(255,255,255,.7)";
+      flakes.forEach(f => { f.y += f.s; if (f.y > 1.02) { f.y = -.02; f.x = Math.random(); }
+        cx.beginPath(); cx.arc((f.x + Math.sin(t / 2000 + f.d) * .01) * cv.width, f.y * cv.height, f.r * devicePixelRatio, 0, 7); cx.fill(); });
+      requestAnimationFrame(frame);
+    })(0);
+  })();
+
+  // ---------- Start ----------
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  setInterval(() => { if (current === "tap" || current === "scores") sync(); }, 15000);
+  render(); sync();
+})();
+</script>
+</body>
+</html>
