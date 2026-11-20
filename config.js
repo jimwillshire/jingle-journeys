@@ -5,8 +5,8 @@ window.TREESPOTTER_CONFIG = {
   // API_URL is the Project URL, e.g. https://abcdefgh.supabase.co
   // API_KEY is the publishable key (sb_publishable_...) or the legacy anon key (eyJ...).
   // Leave both blank and each phone keeps its own scores.
-  API_URL: "",
-  API_KEY: "",
+  API_URL: "https://yfvsqmzbzalvmhburpdl.supabase.co",
+  API_KEY: "sb_publishable_7fvwctDR8i1K7RXRZoE06w_YeMcEVM-",
 
   // Taps before this date are treated as practice and left out of the season table.
   SEASON_START: "2026-12-01",
