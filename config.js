@@ -27,7 +27,8 @@ window.TREESPOTTER_CONFIG = {
     swgs: "SWGS 🎓",
     broadchalke: "Broad Chalke Primary 🎒",
     office: "Daddy's office 🏢",
-    max: "Max 🐴"
+    max: "Max 🐴",
+    rosie: "Rosie's 📚"
   },
 
   // Each pair is one journey; the app adds the reverse automatically.
@@ -35,6 +36,7 @@ window.TREESPOTTER_CONFIG = {
     ["home", "swgs"],
     ["home", "broadchalke"],
     ["home", "office"],
-    ["home", "max"]
+    ["home", "max"],
+    ["home", "rosie"]
   ]
 };
