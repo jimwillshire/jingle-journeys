@@ -231,6 +231,11 @@
   let taps = store.get("taps", []);
   let deletes = store.get("deletes", []); // synced taps undone while offline
   const save = () => { store.set("taps", taps); store.set("deletes", deletes); };
+  // Once the season has started, forget practice taps saved on this phone so they never get re-sent.
+  if (today() >= C.SEASON_START) {
+    const keep = t => t.trip_date >= C.SEASON_START;
+    if (taps.some(t => !keep(t)) || deletes.some(t => !keep(t))) { taps = taps.filter(keep); deletes = deletes.filter(keep); save(); }
+  }
 
   // ---------- Remote ----------
   let remoteRows = {};   // route -> [{trip_date, player, kind, n}]

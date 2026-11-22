@@ -1,0 +1,42 @@
+# Wipes all scores from before 1 December so the season starts afresh.
+# Runs by itself just after midnight on 1 December every year.
+# Uses the same SUPABASE_URL and SUPABASE_KEY secrets as the keep-awake job.
+name: Reset scores on 1 December
+
+on:
+  schedule:
+    - cron: "5 0 1 12 *"   # 00:05 UTC on 1 December (00:05 UK time)
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type WIPE to delete every tap from before today'
+        required: true
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete taps from before today
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          CONFIRM: ${{ github.event.inputs.confirm }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$CONFIRM" != "WIPE" ]; then
+            echo "Not confirmed (type WIPE). Nothing deleted."; exit 1
+          fi
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "SUPABASE_URL or SUPABASE_KEY secret is missing."; exit 1
+          fi
+          cutoff=$(TZ=Europe/London date +%F)
+          auth=()
+          case "$SUPABASE_KEY" in eyJ*) auth=(-H "Authorization: Bearer $SUPABASE_KEY");; esac
+          code=$(curl -s -o /tmp/out -w '%{http_code}' --max-time 30 -X DELETE \
+            -H "apikey: $SUPABASE_KEY" "${auth[@]}" -H "Prefer: return=minimal" \
+            "${SUPABASE_URL%/}/rest/v1/taps?trip_date=lt.$cutoff")
+          echo "Deleting taps before $cutoff: Supabase answered HTTP $code"
+          cat /tmp/out; echo
+          if [ "$code" != "204" ] && [ "$code" != "200" ]; then
+            echo "Delete failed. Supabase may be paused: open supabase.com, pick the project, press Restore, then run this workflow by hand."
+            exit 1
+          fi
