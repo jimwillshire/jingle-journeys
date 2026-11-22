@@ -1,5 +1,7 @@
 # Jingle Journeys: setup (about 15 minutes, all free)
 
+**Coming back to this next Christmas? Read [NEXT-CHRISTMAS.md](NEXT-CHRISTMAS.md) first.** It has everything needed to bring the app back, step by step.
+
 ## 1. Scores database: Supabase
 1. supabase.com > sign up > New project (region: London). Save the database password in 1Password; the app doesn't need it.
 2. SQL Editor > New query > paste all of supabase.sql > Run.
