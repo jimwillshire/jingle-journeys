@@ -26,7 +26,7 @@ After any change, bump VERSION in sw.js (v3 to v4) before pushing so installed p
 ## Good to know
 - Works offline once opened online once: the app opens from the phone's saved copy, and taps queue until there's signal.
 - Practice taps before 1 Dec don't count in the season table, and they are wiped automatically on 1 Dec:
-  the "Reset scores on 1 December" workflow deletes them from Supabase, and each phone forgets its own copy
+  the "Reset scores on 1 December" workflow deletes every tap from before SEASON_START from Supabase, and each phone forgets its own copy
   the next time the app opens. It uses the same SUPABASE_URL and SUPABASE_KEY secrets as the keep-awake job.
   To wipe by hand instead, in the SQL Editor: delete from public.taps where trip_date < '2026-12-01';
 - Next year, change SEASON_START in config.js to the new 1 December; the workflow runs every 1 December by itself.

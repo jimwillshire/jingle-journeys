@@ -16,7 +16,7 @@ If you're reading this on GitHub and the repo is private, that's expected: it ge
 | Database set-up script | `supabase.sql` |
 | GitHub secrets | Repo **Settings > Secrets and variables > Actions**: `SUPABASE_URL` and `SUPABASE_KEY` (same values as `API_URL` and `API_KEY` in `config.js`) |
 | Keep-awake job | `.github/workflows/keep-supabase-awake.yml`: visits the database every 3 days so free Supabase doesn't pause it. Emails you if it fails. |
-| 1 December reset job | `.github/workflows/reset-season.yml`: at 00:05 on 1 December, deletes every tap from before that day so the season starts at zero. |
+| 1 December reset job | `.github/workflows/reset-season.yml`: at 00:05 on 1 December, deletes every tap from before `SEASON_START` in `config.js`, so the season starts at zero. |
 
 Only the **publishable key** (`sb_publishable_...`) is in this repo. That is safe: it is designed to sit in a web page, and the database rules only let it add, read and undo taps. **Never** put the database password or the **secret** key (`sb_secret_...`) in this repo.
 
@@ -67,7 +67,7 @@ Go to **supabase.com**, sign in, and open the `jingle-journeys` project.
 
 1. Open the repo on github.com and click **Actions** (top row).
 2. In the left menu click **Keep Supabase awake**. If there's a yellow banner saying the workflow was disabled, click **Enable workflow**.
-3. Do the same for **Reset scores on 1 December**. This one must be on **before 1 December**, or the reset won't happen.
+3. Do the same for **Reset scores on 1 December**. This one must be on **before 1 December**, or the reset won't happen. It also needs this year's `SEASON_START` (Step 4): if the date is still last year's, the job deletes nothing and fails, so GitHub emails you.
 4. Test the keep-awake job: click **Keep Supabase awake > Run workflow > Run workflow**. Refresh after 30 seconds. A green tick means it can reach the database. A red cross: click it to read why ("secret is missing" means Step 2B step 5; anything else usually means the database is still paused).
 
 ## Step 4. Set this year's season date
@@ -90,7 +90,7 @@ Go to **supabase.com**, sign in, and open the `jingle-journeys` project.
 
 ## On 1 December
 
-The reset job runs by itself at 00:05 and deletes every tap from before that day. To run it by hand (if it was switched off on the day): **Actions > Reset scores on 1 December > Run workflow**, type `WIPE` in the box, **Run workflow**. Or in Supabase **SQL Editor**, run (with this year's date):
+The reset job runs by itself at 00:05 and deletes every tap from before `SEASON_START` in `config.js`. It never touches taps from the season itself, so it's safe to run by hand any time in December (for example if it was switched off on the day, or failed): **Actions > Reset scores on 1 December > Run workflow**, type `WIPE` in the box, **Run workflow**. Or in Supabase **SQL Editor**, run (with this year's date):
 
 ```sql
 delete from public.taps where trip_date < '2027-12-01';
